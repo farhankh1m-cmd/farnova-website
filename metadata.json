@@ -1,0 +1,6 @@
+{
+  "name": "Farnova - The Men's Fashion Store",
+  "description": "Upgrade your style with Farnova. Premium men's fashion in Pakistan: shoes, watches, shirts, and pants with direct WhatsApp ordering and Cash on Delivery.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

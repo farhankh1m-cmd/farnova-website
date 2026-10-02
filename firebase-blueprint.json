@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A luxury menswear product item in the Farnova store catalog.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Product display name"
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock keeping unit code"
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category: shoes, watches, shirts, or pants",
+          "enum": ["shoes", "watches", "shirts", "pants"]
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Subcategory or product style"
+        },
+        "price": {
+          "type": "number",
+          "description": "Retail selling price in PKR"
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original crossed-out price in PKR"
+        },
+        "image": {
+          "type": "string",
+          "description": "Product image URL or data URI"
+        },
+        "shortDescription": {
+          "type": "string",
+          "description": "Short summary description"
+        },
+        "description": {
+          "type": "string",
+          "description": "Full product description and details"
+        },
+        "features": {
+          "type": "array",
+          "description": "List of key product highlights and features"
+        },
+        "sizes": {
+          "type": "array",
+          "description": "Available product sizes"
+        },
+        "colors": {
+          "type": "array",
+          "description": "Available color variants with name and hex"
+        },
+        "stockStatus": {
+          "type": "string",
+          "description": "Inventory status"
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Flag to display in homepage featured section"
+        },
+        "isNewArrival": {
+          "type": "boolean",
+          "description": "Flag for new arrival badge"
+        },
+        "material": {
+          "type": "string",
+          "description": "Primary garment or accessory material"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO date string or timestamp of creation"
+        }
+      },
+      "required": ["id", "name", "category", "price", "image"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of store products available for public purchase and order via WhatsApp."
+    }
+  }
+}
