@@ -91,6 +91,14 @@ export const Footer: React.FC<FooterProps> = ({
                   Chinos &amp; Raw Denim Jeans
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => onSelectCategory("bundles")}
+                  className="hover:text-white transition-colors cursor-pointer text-[#D6C7B2] font-semibold flex items-center gap-1"
+                >
+                  <span>Bundle Deals 🎁</span>
+                </button>
+              </li>
             </ul>
           </div>
 

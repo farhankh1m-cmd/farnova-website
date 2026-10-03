@@ -54,8 +54,62 @@ export const CATEGORIES: Category[] = [
       "Casual Pants",
       "Formal Trousers"
     ]
+  },
+  {
+    "id": "bundles",
+    "name": "Bundle Deals",
+    "tagline": "Curated multi-item sets & build-your-own custom drip savings",
+    "image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80",
+    "subcategories": [
+      "All",
+      "Executive Sets",
+      "Casual Packs",
+      "Custom Bundles"
+    ]
   }
 ];
+
+export const INITIAL_DEFAULT_BUNDLES = [
+  {
+    id: "bundle-executive-drip",
+    title: "Executive Full Drip",
+    productIds: ["sh-02", "pt-01", "st-01", "wt-01"],
+    includedProductNames: [
+      "Kensington Leather Penny Loafer",
+      "Tailored Stretch Cotton Chino",
+      "Milano Formal Oxford Dress Shirt",
+      "Royal Sovereign Chronograph Watch"
+    ],
+    originalPrice: 10000,
+    offerPrice: 6999,
+    discountBadge: "SAVE 30%",
+    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1000&q=80",
+    description: "The complete luxury executive ensemble: oxford shirt, tailored chinos, penny loafers, and sovereign chronograph.",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "bundle-weekend-casual",
+    title: "Weekend Smart Casual Pack",
+    productIds: ["sh-01", "pt-02", "st-03"],
+    includedProductNames: [
+      "Farnova Verona Minimalist Leather Sneaker",
+      "Selvedge Raw Indigo Denim Jeans",
+      "Amalfi French-Linen Casual Shirt"
+    ],
+    originalPrice: 8500,
+    offerPrice: 5999,
+    discountBadge: "SAVE 29%",
+    image: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1000&q=80",
+    description: "Effortlessly sharp weekend ensemble featuring minimalist sneakers, selvedge denim, and French linen shirt.",
+    createdAt: new Date().toISOString(),
+  }
+];
+
+export const DEFAULT_BUNDLE_DISCOUNTS = {
+  twoItems: 15,
+  threeItems: 25,
+  fourItems: 35,
+};
 
 export const PRODUCTS: Product[] = [
   {

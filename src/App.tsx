@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { CategoryId, Product, CartItem, ColorOption } from "./types";
-import { PRODUCTS } from "./data/products";
+import { CategoryId, Product, CartItem, ColorOption, BundleDeal, CustomBundleDiscounts } from "./types";
+import { PRODUCTS, INITIAL_DEFAULT_BUNDLES, DEFAULT_BUNDLE_DISCOUNTS } from "./data/products";
 import { Header } from "./components/Header";
 import { Hero } from "./components/Hero";
 import { CategoriesOverview } from "./components/CategoriesOverview";
@@ -10,6 +10,7 @@ import { WhyChooseUs } from "./components/WhyChooseUs";
 import { ContactSection } from "./components/ContactSection";
 import { Footer } from "./components/Footer";
 import { CategoryPage } from "./components/CategoryPage";
+import { BundleDealsPage } from "./components/BundleDealsPage";
 import { ProductModal } from "./components/ProductModal";
 import { CartDrawer } from "./components/CartDrawer";
 import { SearchModal } from "./components/SearchModal";
@@ -26,6 +27,8 @@ export default function App() {
   const [activeCategory, setActiveCategory] = useState<CategoryId | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [adminModalTab, setAdminModalTab] = useState<"single" | "bundle" | "manage" | "settings">("single");
+  const [editingBundle, setEditingBundle] = useState<BundleDeal | null>(null);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   // Admin authentication state: Farhan Khan (farhankh1m@gmail.com)
@@ -70,7 +73,6 @@ export default function App() {
       currentPassword = "farnova2026";
     }
 
-    // Verify old password strictly matches current password
     if (oldPassword !== currentPassword) {
       return false;
     }
@@ -95,6 +97,42 @@ export default function App() {
       return [];
     }
   });
+
+  // Bundle Deals state (key: farnova_bundles, 100% admin controlled)
+  const [bundles, setBundles] = useState<BundleDeal[]>(() => {
+    try {
+      const saved = localStorage.getItem("farnova_bundles");
+      return saved ? JSON.parse(saved) : INITIAL_DEFAULT_BUNDLES;
+    } catch {
+      return INITIAL_DEFAULT_BUNDLES;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("farnova_bundles", JSON.stringify(bundles));
+    } catch (e) {
+      console.warn("Failed to save bundles to localStorage", e);
+    }
+  }, [bundles]);
+
+  // Bundle Discount Percentages state (key: farnova_bundle_discounts)
+  const [bundleDiscounts, setBundleDiscounts] = useState<CustomBundleDiscounts>(() => {
+    try {
+      const saved = localStorage.getItem("farnova_bundle_discounts");
+      return saved ? JSON.parse(saved) : DEFAULT_BUNDLE_DISCOUNTS;
+    } catch {
+      return DEFAULT_BUNDLE_DISCOUNTS;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("farnova_bundle_discounts", JSON.stringify(bundleDiscounts));
+    } catch (e) {
+      console.warn("Failed to save bundle discounts to localStorage", e);
+    }
+  }, [bundleDiscounts]);
 
   // Subscribe to live Firestore updates
   useEffect(() => {
@@ -172,31 +210,47 @@ export default function App() {
   };
 
   const handleAddProduct = (newProduct: Product) => {
-    // 1. Optimistic update
     setCustomProducts((prev) => [newProduct, ...prev]);
-
-    // 2. Real-time Cloud Firestore write
     saveProductToCloud(newProduct).catch((err) => {
       console.warn("Failed to save product to cloud:", err);
     });
   };
 
   const handleDeleteCustomProduct = (productId: string) => {
-    // 1. Optimistic remove
     setCustomProducts((prev) => prev.filter((p) => p.id !== productId));
     setCloudProducts((prev) => prev.filter((p) => p.id !== productId));
-
-    // 2. Cloud Firestore deletion
     deleteProductFromCloud(productId).catch((err) => {
       console.warn("Failed to delete product from cloud:", err);
     });
+  };
+
+  // Bundle handlers
+  const handleSaveBundle = (bundle: BundleDeal) => {
+    setBundles((prev) => {
+      const idx = prev.findIndex((b) => b.id === bundle.id);
+      if (idx > -1) {
+        const copy = [...prev];
+        copy[idx] = bundle;
+        return copy;
+      }
+      return [bundle, ...prev];
+    });
+  };
+
+  const handleDeleteBundle = (bundleId: string) => {
+    setBundles((prev) => prev.filter((b) => b.id !== bundleId));
+  };
+
+  const handleSaveBundleDiscounts = (discounts: CustomBundleDiscounts) => {
+    setBundleDiscounts(discounts);
   };
 
   const handleAddToCart = (
     product: Product,
     selectedSize?: string,
     selectedColor?: ColorOption,
-    quantity: number = 1
+    quantity: number = 1,
+    customBundleInfo?: { isBundle: boolean; includedItems: string[] }
   ) => {
     const size = selectedSize || product.sizes[0] || "Standard";
     const color = selectedColor || product.colors[0] || { name: "Default", hex: "#000000" };
@@ -225,6 +279,8 @@ export default function App() {
           quantity,
           selectedSize: size,
           selectedColor: color,
+          isBundle: customBundleInfo?.isBundle,
+          includedItems: customBundleInfo?.includedItems,
         },
       ]);
     }
@@ -279,6 +335,8 @@ export default function App() {
           if (!isAdmin) {
             setIsAdminModalOpen(true);
           } else {
+            setEditingBundle(null);
+            setAdminModalTab("single");
             setIsAddProductOpen(true);
           }
         }}
@@ -313,6 +371,26 @@ export default function App() {
             <WhyChooseUs />
             <ContactSection />
           </>
+        ) : activeCategory === "bundles" ? (
+          <BundleDealsPage
+            bundles={bundles}
+            allProducts={allProducts}
+            bundleDiscounts={bundleDiscounts}
+            isAdmin={isAdmin}
+            onAddToCart={handleAddToCart}
+            onBackToHome={handleNavigateHome}
+            onEditBundle={(bundle) => {
+              setEditingBundle(bundle);
+              setAdminModalTab("bundle");
+              setIsAddProductOpen(true);
+            }}
+            onDeleteBundle={handleDeleteBundle}
+            onOpenCreateBundle={() => {
+              setEditingBundle(null);
+              setAdminModalTab("bundle");
+              setIsAddProductOpen(true);
+            }}
+          />
         ) : (
           <CategoryPage
             categoryId={activeCategory}
@@ -356,14 +434,25 @@ export default function App() {
         products={allProducts}
       />
 
-      {/* Add Product Modal (Admin Restricted) */}
+      {/* Add Product & Bundle Management Modal (Admin Restricted) */}
       {isAdmin && (
         <AddProductModal
           isOpen={isAddProductOpen}
-          onClose={() => setIsAddProductOpen(false)}
+          onClose={() => {
+            setIsAddProductOpen(false);
+            setEditingBundle(null);
+          }}
           onAddProduct={handleAddProduct}
           customProducts={managedCustomProducts}
           onDeleteCustomProduct={handleDeleteCustomProduct}
+          allProducts={allProducts}
+          bundles={bundles}
+          onSaveBundle={handleSaveBundle}
+          onDeleteBundle={handleDeleteBundle}
+          bundleDiscounts={bundleDiscounts}
+          onSaveBundleDiscounts={handleSaveBundleDiscounts}
+          initialTab={adminModalTab}
+          editingBundleToLoad={editingBundle}
         />
       )}
 
@@ -379,23 +468,38 @@ export default function App() {
 
       {/* Floating Admin Controls for Farhan Khan */}
       {isAdmin && (
-        <div className="fixed bottom-5 left-5 z-40 bg-[#18181A]/95 backdrop-blur-md border border-[#D6C7B2]/40 text-[#FAF8F5] px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-5 left-5 z-40 bg-[#18181A]/95 backdrop-blur-md border border-[#D6C7B2]/40 text-[#FAF8F5] px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2.5 text-xs animate-in fade-in slide-in-from-bottom duration-300">
           <span className="flex items-center gap-1.5 font-semibold text-[#D6C7B2]">
-            👑 Admin Mode
+            👑 Admin
           </span>
           <span className="text-white/30">|</span>
           <button
-            onClick={() => setIsAddProductOpen(true)}
+            onClick={() => {
+              setEditingBundle(null);
+              setAdminModalTab("single");
+              setIsAddProductOpen(true);
+            }}
             className="text-white hover:text-[#D6C7B2] font-medium underline cursor-pointer"
           >
-            + Post Item
+            + Item
+          </button>
+          <span className="text-white/30">|</span>
+          <button
+            onClick={() => {
+              setEditingBundle(null);
+              setAdminModalTab("bundle");
+              setIsAddProductOpen(true);
+            }}
+            className="text-[#D6C7B2] hover:text-white font-medium underline cursor-pointer flex items-center gap-1"
+          >
+            <span>🎁 + Bundle</span>
           </button>
           <span className="text-white/30">|</span>
           <button
             onClick={() => setIsAdminModalOpen(true)}
             className="text-white/70 hover:text-white cursor-pointer"
           >
-            Admin Panel
+            Settings
           </button>
         </div>
       )}

@@ -26,6 +26,12 @@ export const CategoryCard: React.FC<CategoryCardProps> = ({ category, onSelect }
           }`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {category.id === "bundles" && (
+          <div className="absolute top-3 left-3 bg-[#D6C7B2] text-[#1A1A1A] font-bold text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
+            <span>🎁</span>
+            <span>Bundle Deals</span>
+          </div>
+        )}
         <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 text-[#1A1A1A] flex items-center justify-center shadow-md group-hover:bg-[#1A1A1A] group-hover:text-white transition-colors">
           <ArrowUpRight className="w-4 h-4" />
         </div>
