@@ -37,9 +37,15 @@ export default function App() {
     }
   });
 
-  const handleAdminLogin = (enteredPin: string): boolean => {
-    const storedPin = localStorage.getItem("farnova_admin_pin") || "farnova2026";
-    if (enteredPin === storedPin || enteredPin === "farnova2026") {
+  const handleAdminLogin = (enteredPassword: string): boolean => {
+    let currentPassword = "farnova2026";
+    try {
+      currentPassword = localStorage.getItem("farnova_admin_password") || "farnova2026";
+    } catch {
+      currentPassword = "farnova2026";
+    }
+
+    if (enteredPassword === currentPassword) {
       setIsAdmin(true);
       try {
         localStorage.setItem("farnova_admin_logged_in", "true");
@@ -56,15 +62,25 @@ export default function App() {
     } catch {}
   };
 
-  const handleChangeAdminPin = (oldPin: string, newPin: string): boolean => {
-    const storedPin = localStorage.getItem("farnova_admin_pin") || "farnova2026";
-    if (oldPin === storedPin || oldPin === "farnova2026") {
-      try {
-        localStorage.setItem("farnova_admin_pin", newPin);
-      } catch {}
-      return true;
+  const handleChangeAdminPassword = (oldPassword: string, newPassword: string): boolean => {
+    let currentPassword = "farnova2026";
+    try {
+      currentPassword = localStorage.getItem("farnova_admin_password") || "farnova2026";
+    } catch {
+      currentPassword = "farnova2026";
     }
-    return false;
+
+    // Verify old password strictly matches current password
+    if (oldPassword !== currentPassword) {
+      return false;
+    }
+
+    try {
+      localStorage.setItem("farnova_admin_password", newPassword);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   // Cloud Firestore synced products
@@ -358,7 +374,7 @@ export default function App() {
         isAdmin={isAdmin}
         onLogin={handleAdminLogin}
         onLogout={handleAdminLogout}
-        onChangePin={handleChangeAdminPin}
+        onChangePassword={handleChangeAdminPassword}
       />
 
       {/* Floating Admin Controls for Farhan Khan */}
