@@ -1,5 +1,5 @@
 import React from "react";
-import { MessageCircle, Instagram, Facebook } from "lucide-react";
+import { MessageCircle, Instagram, Facebook, Lock, ShieldCheck } from "lucide-react";
 import { CategoryId } from "../types";
 import { STORE_PHONE, STORE_WHATSAPP } from "../data/products";
 
@@ -7,12 +7,16 @@ interface FooterProps {
   onSelectCategory: (id: CategoryId) => void;
   onNavigateHome: () => void;
   onNavigateContact: () => void;
+  isAdmin?: boolean;
+  onOpenAdminLogin?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   onSelectCategory,
   onNavigateHome,
   onNavigateContact,
+  isAdmin = false,
+  onOpenAdminLogin,
 }) => {
   return (
     <footer className="bg-[#141416] text-[#FAF8F5] border-t border-white/10 pt-16 pb-12">
@@ -189,6 +193,28 @@ export const Footer: React.FC<FooterProps> = ({
             <span>Payment Method: Cash on Delivery (COD)</span>
             <span aria-hidden="true">·</span>
             <span>WhatsApp Ordering System</span>
+            {onOpenAdminLogin && (
+              <>
+                <span aria-hidden="true">·</span>
+                <button
+                  onClick={onOpenAdminLogin}
+                  className="flex items-center gap-1 hover:text-[#D6C7B2] transition-colors cursor-pointer text-[11px] underline opacity-70 hover:opacity-100"
+                  title="Store Owner Portal"
+                >
+                  {isAdmin ? (
+                    <>
+                      <ShieldCheck className="w-3 h-3 text-[#25D366]" />
+                      <span className="text-[#25D366]">Admin Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3 h-3 text-[#A3A3A3]" />
+                      <span>Admin Login</span>
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

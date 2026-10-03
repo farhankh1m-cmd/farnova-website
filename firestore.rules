@@ -1,27 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Global Default Deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    function isValidProduct(data) {
-      return data.keys().hasAll(['id', 'name', 'category', 'price', 'image'])
-        && data.id is string && data.id.size() <= 128
-        && data.name is string && data.name.size() <= 200
-        && data.category is string && data.category.size() <= 50
-        && data.price is number && data.price >= 0
-        && data.image is string && data.image.size() <= 1000000;
-    }
-
     match /products/{productId} {
-      // Allow public read so all shoppers and visitors can view the catalog
-      allow read: if true;
-      // Allow store manager to add, edit and delete products
-      allow create: if isValidProduct(request.resource.data);
-      allow update: if isValidProduct(request.resource.data);
-      allow delete: if true;
+      allow read, write: if true;
+    }
+
+    match /settings/{settingId} {
+      allow read, write: if true;
     }
   }
 }

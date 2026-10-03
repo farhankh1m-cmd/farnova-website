@@ -2,7 +2,7 @@ import { Category, Product } from "../types";
 
 export const STORE_PHONE = "03034495235";
 export const STORE_WHATSAPP = "https://wa.me/923034495235";
-export const HERO_BANNER_IMAGE = "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=1920&q=80";
+export const HERO_BANNER_IMAGE = "/src/assets/images/farnova_hero_model_1790980184996.jpg";
 
 export const CATEGORIES: Category[] = [
   {

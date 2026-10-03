@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageCircle, Search, ShoppingBag, Menu, X, Plus } from "lucide-react";
+import { MessageCircle, Search, ShoppingBag, Menu, X, Plus, ShieldCheck } from "lucide-react";
 import { CategoryId } from "../types";
 import { STORE_PHONE, STORE_WHATSAPP } from "../data/products";
 
@@ -12,6 +12,8 @@ interface HeaderProps {
   onNavigateHome: () => void;
   onNavigateContact: () => void;
   onOpenAddProduct: () => void;
+  isAdmin: boolean;
+  onOpenAdminLogin: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateHome,
   onNavigateContact,
   onOpenAddProduct,
+  isAdmin,
+  onOpenAdminLogin,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -47,6 +51,16 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-4 text-[11px] sm:text-xs">
+            {isAdmin && (
+              <button
+                onClick={onOpenAdminLogin}
+                className="hidden sm:inline-flex items-center gap-1 text-[#D6C7B2] hover:underline cursor-pointer"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Active (Farhan)</span>
+              </button>
+            )}
+
             <a
               href={`${STORE_WHATSAPP}?text=Assalam-o-Alaikum%2C%20I%20need%20help%20ordering%20from%20Farnova.`}
               target="_blank"
@@ -117,16 +131,19 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </nav>
 
-          {/* Actions: Search, Add Product, WhatsApp, Bag, Mobile Toggle */}
+          {/* Actions: Search, Add Product (ONLY FOR ADMIN), WhatsApp, Bag, Mobile Toggle */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={onOpenAddProduct}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#1A1A1A] bg-[#EAE6DF] hover:bg-[#DDD8CF] border border-[#1A1A1A]/10 rounded-lg transition-colors cursor-pointer"
-              title="Post new product (Insta style)"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">+ Post Item</span>
-            </button>
+            {/* ONLY ADMIN SEES THIS BUTTON */}
+            {isAdmin && (
+              <button
+                onClick={onOpenAddProduct}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#1A1A1A] bg-[#EAE6DF] hover:bg-[#DDD8CF] border border-[#1A1A1A]/15 rounded-lg transition-colors cursor-pointer shadow-sm"
+                title="Post new product (Admin Only)"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#B8986B]" />
+                <span className="hidden sm:inline">+ Post Item</span>
+              </button>
+            )}
 
             <button
               onClick={onOpenSearch}
@@ -218,16 +235,19 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <div className="pt-3 border-t border-[#1A1A1A]/10 space-y-2">
-              <button
-                onClick={() => {
-                  onOpenAddProduct();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1A1A1A] text-[#FAF8F5] text-xs uppercase tracking-wider font-semibold rounded-lg hover:bg-black transition-colors cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-[#D6C7B2]" />
-                <span>+ Post New Product (Insta Style)</span>
-              </button>
+              {/* ONLY ADMIN SEES THIS ON MOBILE */}
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    onOpenAddProduct();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1A1A1A] text-[#FAF8F5] text-xs uppercase tracking-wider font-semibold rounded-lg hover:bg-black transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-[#D6C7B2]" />
+                  <span>+ Post New Product (Admin Only)</span>
+                </button>
+              )}
 
               <a
                 href={`${STORE_WHATSAPP}?text=Assalam-o-Alaikum%2C%20I%20want%20to%20order%20from%20Farnova.`}
@@ -238,6 +258,18 @@ export const Header: React.FC<HeaderProps> = ({
                 <MessageCircle className="w-4 h-4 fill-current" />
                 <span>Order on WhatsApp ({STORE_PHONE})</span>
               </a>
+
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    onOpenAdminLogin();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-center text-xs text-[#666666] py-1 underline cursor-pointer"
+                >
+                  Admin Settings (Logged in as Farhan)
+                </button>
+              )}
             </div>
           </div>
         </div>

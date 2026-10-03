@@ -1,13 +1,76 @@
-import React, { useState } from "react";
-import { ArrowRight, MessageCircle, Truck, ShieldCheck, RotateCcw } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ArrowRight,
+  MessageCircle,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  Camera,
+  Check,
+} from "lucide-react";
 import { HERO_BANNER_IMAGE, STORE_PHONE, STORE_WHATSAPP } from "../data/products";
+import { saveHeroImageToCloud, subscribeToCloudHero } from "../firebase";
 
 interface HeroProps {
   onExplore: () => void;
+  isAdmin?: boolean;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
+export const Hero: React.FC<HeroProps> = ({ onExplore, isAdmin = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [heroImage, setHeroImage] = useState<string>(() => {
+    try {
+      return localStorage.getItem("farnova_hero_image") || HERO_BANNER_IMAGE;
+    } catch {
+      return HERO_BANNER_IMAGE;
+    }
+  });
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync hero image in real-time from Cloud Firestore
+  useEffect(() => {
+    const unsub = subscribeToCloudHero((cloudImg) => {
+      if (cloudImg) {
+        setHeroImage(cloudImg);
+        try {
+          localStorage.setItem("farnova_hero_image", cloudImg);
+        } catch {
+          // ignore storage error
+        }
+      }
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
+
+  // Handle direct file upload from user device (gallery/files)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setHeroImage(result);
+        setImageLoaded(true);
+        setUploadSuccess(true);
+        setTimeout(() => setUploadSuccess(false), 3000);
+
+        try {
+          localStorage.setItem("farnova_hero_image", result);
+        } catch {
+          // ignore storage error
+        }
+
+        // Save to Cloud Firestore so all visitors globally see the exact photo
+        saveHeroImageToCloud(result).catch((err) =>
+          console.warn("Failed to save hero photo to cloud", err)
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <section className="relative overflow-hidden bg-[#18181A] text-[#FAF8F5]">
@@ -67,25 +130,60 @@ export const Hero: React.FC<HeroProps> = ({ onExplore }) => {
           </div>
 
           {/* Right Hero Image */}
-          <div className="lg:col-span-6 relative min-h-[360px] sm:min-h-[460px] lg:min-h-full bg-[#1C1C1E] overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#141416] via-[#232326] to-[#1A1A1C]" />
+          <div className="lg:col-span-6 relative min-h-[440px] sm:min-h-[520px] lg:min-h-full bg-[#18181A] overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#121214] via-[#1A1A1C] to-[#202024]" />
             <img
-              src={HERO_BANNER_IMAGE}
-              alt="Farnova Men's Fashion Editorial Campaign"
+              src={heroImage}
+              alt="Farnova Men's Signature Collection"
               referrerPolicy="no-referrer"
               onLoad={() => setImageLoaded(true)}
-              className={`w-full h-full object-cover object-center absolute inset-0 transition-opacity duration-700 ${
-                imageLoaded ? "opacity-90" : "opacity-0"
+              className={`w-full h-full object-cover object-[center_20%] sm:object-center absolute inset-0 transition-all duration-700 ${
+                imageLoaded ? "opacity-95 scale-100" : "opacity-0 scale-105"
               }`}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#18181A] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#18181A] lg:via-transparent lg:to-transparent" />
-            
-            <div className="absolute bottom-6 right-6 bg-[#1A1A1A]/85 backdrop-blur-md border border-white/15 px-4 py-3 rounded-lg text-xs max-w-xs shadow-2xl hidden sm:block">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#18181A] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#18181A] lg:via-[#18181A]/40 lg:to-transparent pointer-events-none" />
+
+            {/* Direct 1-Click Upload Button to Set Exact User Photo (ADMIN ONLY) */}
+            {isAdmin && (
+              <div className="absolute top-4 right-4 z-30">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold backdrop-blur-md border transition-all cursor-pointer shadow-2xl active:scale-95 ${
+                    uploadSuccess
+                      ? "bg-[#25D366] text-white border-[#25D366]"
+                      : "bg-black/75 hover:bg-black text-[#FAF8F5] border-white/25 hover:border-[#D6C7B2]"
+                  }`}
+                  title="Select your exact WhatsApp photo from your device (Admin Only)"
+                >
+                  {uploadSuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-white" />
+                      <span>Exact Photo Applied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 text-[#D6C7B2]" />
+                      <span>📸 Tap to Set Your Exact Photo</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            <div className="absolute bottom-6 right-6 bg-[#1A1A1A]/85 backdrop-blur-md border border-white/15 px-4 py-3 rounded-lg text-xs max-w-xs shadow-2xl hidden sm:block pointer-events-none">
               <span className="text-[#D6C7B2] font-semibold block text-[11px] uppercase tracking-wider">
-                New Season Signature
+                Farnova Signature
               </span>
               <span className="text-[#E5E5E5] font-light mt-0.5 block">
-                Tailored for the modern Pakistani wardrobe
+                Tailored menswear &amp; modern sartorial elegance
               </span>
             </div>
           </div>

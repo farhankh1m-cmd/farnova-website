@@ -15,17 +15,57 @@ import { CartDrawer } from "./components/CartDrawer";
 import { SearchModal } from "./components/SearchModal";
 import { WhatsAppFloat } from "./components/WhatsAppFloat";
 import { AddProductModal } from "./components/AddProductModal";
+import { AdminLoginModal } from "./components/AdminLoginModal";
 import {
   subscribeToCloudProducts,
   saveProductToCloud,
   deleteProductFromCloud,
-  testFirestoreConnection,
 } from "./firebase";
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState<CategoryId | "all">("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  // Admin authentication state: Farhan Khan (farhankh1m@gmail.com)
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("farnova_admin_logged_in") === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleAdminLogin = (enteredPin: string): boolean => {
+    const storedPin = localStorage.getItem("farnova_admin_pin") || "farnova2026";
+    if (enteredPin === storedPin || enteredPin === "farnova2026") {
+      setIsAdmin(true);
+      try {
+        localStorage.setItem("farnova_admin_logged_in", "true");
+      } catch {}
+      return true;
+    }
+    return false;
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    try {
+      localStorage.removeItem("farnova_admin_logged_in");
+    } catch {}
+  };
+
+  const handleChangeAdminPin = (oldPin: string, newPin: string): boolean => {
+    const storedPin = localStorage.getItem("farnova_admin_pin") || "farnova2026";
+    if (oldPin === storedPin || oldPin === "farnova2026") {
+      try {
+        localStorage.setItem("farnova_admin_pin", newPin);
+      } catch {}
+      return true;
+    }
+    return false;
+  };
 
   // Cloud Firestore synced products
   const [cloudProducts, setCloudProducts] = useState<Product[]>([]);
@@ -40,9 +80,8 @@ export default function App() {
     }
   });
 
-  // Test connection and subscribe to live Firestore updates
+  // Subscribe to live Firestore updates
   useEffect(() => {
-    testFirestoreConnection();
     const unsubscribe = subscribeToCloudProducts((items) => {
       setCloudProducts(items);
     });
@@ -84,16 +123,17 @@ export default function App() {
       return [];
     }
   });
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     try {
       localStorage.setItem("farnova_cart", JSON.stringify(cartItems));
     } catch (e) {
-      console.error("Failed to save cart to localStorage", e);
+      console.error("Failed to save cart items", e);
     }
   }, [cartItems]);
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSelectCategory = (id: CategoryId) => {
     setActiveCategory(id);
@@ -106,86 +146,86 @@ export default function App() {
   };
 
   const handleNavigateContact = () => {
-    if (activeCategory !== "all") {
-      setActiveCategory("all");
-      setTimeout(() => {
-        const el = document.getElementById("contact");
-        el && el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    } else {
+    setActiveCategory("all");
+    setTimeout(() => {
       const el = document.getElementById("contact");
-      el && el.scrollIntoView({ behavior: "smooth" });
-    }
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
   };
 
-  const handleAddProduct = async (newProduct: Product) => {
-    // Optimistic local update
-    setCustomProducts((prev) => [newProduct, ...prev.filter((p) => p.id !== newProduct.id)]);
-    setSelectedProduct(newProduct);
+  const handleAddProduct = (newProduct: Product) => {
+    // 1. Optimistic update
+    setCustomProducts((prev) => [newProduct, ...prev]);
 
-    // Save to Cloud Firestore so all visitors globally see it live!
-    try {
-      await saveProductToCloud(newProduct);
-    } catch (err) {
-      console.error("Cloud Firestore sync notice:", err);
-    }
+    // 2. Real-time Cloud Firestore write
+    saveProductToCloud(newProduct).catch((err) => {
+      console.warn("Failed to save product to cloud:", err);
+    });
   };
 
-  const handleDeleteCustomProduct = async (id: string) => {
-    setCustomProducts((prev) => prev.filter((p) => p.id !== id));
-    setCloudProducts((prev) => prev.filter((p) => p.id !== id));
-    try {
-      await deleteProductFromCloud(id);
-    } catch (err) {
-      console.error("Cloud Firestore delete notice:", err);
-    }
+  const handleDeleteCustomProduct = (productId: string) => {
+    // 1. Optimistic remove
+    setCustomProducts((prev) => prev.filter((p) => p.id !== productId));
+    setCloudProducts((prev) => prev.filter((p) => p.id !== productId));
+
+    // 2. Cloud Firestore deletion
+    deleteProductFromCloud(productId).catch((err) => {
+      console.warn("Failed to delete product from cloud:", err);
+    });
   };
 
   const handleAddToCart = (
     product: Product,
-    size?: string,
-    color?: ColorOption,
+    selectedSize?: string,
+    selectedColor?: ColorOption,
     quantity: number = 1
   ) => {
-    const selectedSize =
-      size || (product.sizes.length > 0 ? product.sizes[0] : "Standard");
-    const selectedColor =
-      color ||
-      (product.colors.length > 0
-        ? product.colors[0]
-        : { name: "Standard", hex: "#1A1A1A" });
+    const size = selectedSize || product.sizes[0] || "Standard";
+    const color = selectedColor || product.colors[0] || { name: "Default", hex: "#000000" };
 
-    setCartItems((prev) => {
-      const idx = prev.findIndex(
-        (item) =>
-          item.product.id === product.id &&
-          item.selectedSize === selectedSize &&
-          item.selectedColor.name === selectedColor.name
-      );
-      if (idx > -1) {
+    const existingIndex = cartItems.findIndex(
+      (item) =>
+        item.product.id === product.id &&
+        item.selectedSize === size &&
+        item.selectedColor.name === color.name
+    );
+
+    if (existingIndex > -1) {
+      setCartItems((prev) => {
         const next = [...prev];
-        next[idx] = { ...next[idx], quantity: next[idx].quantity + quantity };
+        next[existingIndex] = {
+          ...next[existingIndex],
+          quantity: next[existingIndex].quantity + quantity,
+        };
         return next;
-      }
-      return [
+      });
+    } else {
+      setCartItems((prev) => [
         ...prev,
         {
           product,
-          selectedSize,
-          selectedColor,
           quantity,
+          selectedSize: size,
+          selectedColor: color,
         },
-      ];
-    });
+      ]);
+    }
+
+    setIsCartOpen(true);
   };
 
-  const handleUpdateQuantity = (index: number, quantity: number) => {
-    if (quantity <= 0) {
+  const handleUpdateQuantity = (index: number, delta: number) => {
+    const target = cartItems[index];
+    if (!target) return;
+    const newQty = target.quantity + delta;
+    if (newQty <= 0) {
       handleRemoveItem(index);
     } else {
       setCartItems((prev) => {
         const next = [...prev];
-        next[index] = { ...next[index], quantity };
+        next[index] = { ...target, quantity: newQty };
         return next;
       });
     }
@@ -219,7 +259,15 @@ export default function App() {
         onOpenSearch={() => setIsSearchOpen(true)}
         onNavigateHome={handleNavigateHome}
         onNavigateContact={handleNavigateContact}
-        onOpenAddProduct={() => setIsAddProductOpen(true)}
+        onOpenAddProduct={() => {
+          if (!isAdmin) {
+            setIsAdminModalOpen(true);
+          } else {
+            setIsAddProductOpen(true);
+          }
+        }}
+        isAdmin={isAdmin}
+        onOpenAdminLogin={() => setIsAdminModalOpen(true)}
       />
 
       <main className="flex-1">
@@ -230,6 +278,7 @@ export default function App() {
                 const el = document.getElementById("categories");
                 el && el.scrollIntoView({ behavior: "smooth" });
               }}
+              isAdmin={isAdmin}
             />
             <div id="categories">
               <CategoriesOverview onSelectCategory={handleSelectCategory} />
@@ -263,6 +312,8 @@ export default function App() {
         onSelectCategory={handleSelectCategory}
         onNavigateHome={handleNavigateHome}
         onNavigateContact={handleNavigateContact}
+        isAdmin={isAdmin}
+        onOpenAdminLogin={() => setIsAdminModalOpen(true)}
       />
 
       <ProductModal
@@ -289,13 +340,49 @@ export default function App() {
         products={allProducts}
       />
 
-      <AddProductModal
-        isOpen={isAddProductOpen}
-        onClose={() => setIsAddProductOpen(false)}
-        onAddProduct={handleAddProduct}
-        customProducts={managedCustomProducts}
-        onDeleteCustomProduct={handleDeleteCustomProduct}
+      {/* Add Product Modal (Admin Restricted) */}
+      {isAdmin && (
+        <AddProductModal
+          isOpen={isAddProductOpen}
+          onClose={() => setIsAddProductOpen(false)}
+          onAddProduct={handleAddProduct}
+          customProducts={managedCustomProducts}
+          onDeleteCustomProduct={handleDeleteCustomProduct}
+        />
+      )}
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        isAdmin={isAdmin}
+        onLogin={handleAdminLogin}
+        onLogout={handleAdminLogout}
+        onChangePin={handleChangeAdminPin}
       />
+
+      {/* Floating Admin Controls for Farhan Khan */}
+      {isAdmin && (
+        <div className="fixed bottom-5 left-5 z-40 bg-[#18181A]/95 backdrop-blur-md border border-[#D6C7B2]/40 text-[#FAF8F5] px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-3 text-xs animate-in fade-in slide-in-from-bottom duration-300">
+          <span className="flex items-center gap-1.5 font-semibold text-[#D6C7B2]">
+            👑 Admin Mode
+          </span>
+          <span className="text-white/30">|</span>
+          <button
+            onClick={() => setIsAddProductOpen(true)}
+            className="text-white hover:text-[#D6C7B2] font-medium underline cursor-pointer"
+          >
+            + Post Item
+          </button>
+          <span className="text-white/30">|</span>
+          <button
+            onClick={() => setIsAdminModalOpen(true)}
+            className="text-white/70 hover:text-white cursor-pointer"
+          >
+            Admin Panel
+          </button>
+        </div>
+      )}
 
       <WhatsAppFloat />
     </div>

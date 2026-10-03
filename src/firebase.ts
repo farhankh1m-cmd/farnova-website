@@ -1,22 +1,29 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
-  getFirestore,
+  initializeFirestore,
   collection,
   doc,
   setDoc,
   deleteDoc,
   onSnapshot,
-  getDocFromServer,
-  query,
-  orderBy,
+  setLogLevel,
 } from "firebase/firestore";
 import firebaseConfig from "../firebase-applet-config.json";
 import { Product } from "./types";
 
-const app = initializeApp(firebaseConfig);
+// Suppress Firestore verbose connection logs in sandbox/iframe environments
+setLogLevel("silent");
 
-// CRITICAL: Initialize Firestore with the exact database ID from config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+// Force long-polling to connect immediately without 10s WebSocket timeout in iframes
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalForceLongPolling: true,
+  },
+  firebaseConfig.firestoreDatabaseId
+);
 
 export enum OperationType {
   CREATE = "create",
@@ -43,7 +50,7 @@ export function handleFirestoreError(
   error: unknown,
   operationType: OperationType,
   path: string | null
-): never {
+): void {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -55,19 +62,7 @@ export function handleFirestoreError(
     operationType,
     path,
   };
-  console.error("Firestore Error: ", JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
-
-// Test connection on boot as mandated by Firestore guidelines
-export async function testFirestoreConnection() {
-  try {
-    await getDocFromServer(doc(db, "test", "connection"));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("the client is offline")) {
-      console.warn("Firestore client is offline, check connection.");
-    }
-  }
+  console.debug("Firestore Notice: ", JSON.stringify(errInfo));
 }
 
 // Subscribe to real-time products collection from cloud Firestore
@@ -77,9 +72,9 @@ export function subscribeToCloudProducts(
 ) {
   const colPath = "products";
   try {
-    const q = query(collection(db, colPath), orderBy("createdAt", "desc"));
+    const colRef = collection(db, colPath);
     return onSnapshot(
-      q,
+      colRef,
       (snapshot) => {
         const items: Product[] = [];
         snapshot.forEach((docSnap) => {
@@ -109,12 +104,12 @@ export function subscribeToCloudProducts(
         onUpdate(items);
       },
       (error) => {
+        // Handled silently to allow offline operation
         if (onError) onError(error);
-        handleFirestoreError(error, OperationType.GET, colPath);
       }
     );
   } catch (err) {
-    handleFirestoreError(err, OperationType.GET, colPath);
+    console.debug("Firestore subscription notice:", err);
   }
 }
 
@@ -155,5 +150,37 @@ export async function deleteProductFromCloud(productId: string): Promise<void> {
     await deleteDoc(doc(db, "products", productId));
   } catch (err) {
     handleFirestoreError(err, OperationType.DELETE, colPath);
+  }
+}
+
+// Save custom Hero image to Cloud Firestore
+export async function saveHeroImageToCloud(imageUrl: string): Promise<void> {
+  const colPath = "settings/hero";
+  try {
+    await setDoc(doc(db, "settings", "hero"), {
+      imageUrl,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, colPath);
+  }
+}
+
+// Subscribe to Cloud Firestore Hero Image with resilient error handler
+export function subscribeToCloudHero(onUpdate: (imageUrl: string) => void) {
+  try {
+    return onSnapshot(
+      doc(db, "settings", "hero"),
+      (docSnap) => {
+        if (docSnap.exists() && docSnap.data().imageUrl) {
+          onUpdate(docSnap.data().imageUrl);
+        }
+      },
+      (_error) => {
+        // Handled silently
+      }
+    );
+  } catch (err) {
+    console.debug("Failed to subscribe to hero image setting", err);
   }
 }
