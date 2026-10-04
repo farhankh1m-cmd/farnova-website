@@ -78,22 +78,18 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Main Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center">
             <button
               onClick={() => {
                 onNavigateHome();
                 setMobileMenuOpen(false);
               }}
-              className="group text-left focus:outline-none cursor-pointer"
+              className="p-0 m-0 border-0 bg-transparent shadow-none focus:outline-none cursor-pointer flex items-center"
+              aria-label="Farnova"
             >
-              <span className="font-serif text-2xl sm:text-3xl font-bold tracking-[0.18em] text-[#1A1A1A] block leading-none">
-                FARNOVA
-              </span>
-              <span className="text-[10px] tracking-[0.25em] text-[#737373] uppercase font-sans block mt-1">
-                The Men&apos;s Fashion Store
-              </span>
+              <img src="/logo.png" alt="Farnova" className="w-9 h-9 object-contain" />
             </button>
           </div>
 

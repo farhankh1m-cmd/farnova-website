@@ -78,6 +78,90 @@ export const Hero: React.FC<HeroProps> = ({ onExplore, isAdmin = false }) => {
         <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[580px] lg:min-h-[640px] items-stretch">
           {/* Left Hero Content */}
           <div className="lg:col-span-6 flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-16 lg:py-24 z-10">
+            {/* Top-Left Branding Block (Embroidered Font & Subtext) */}
+            <div className="mb-6 select-none">
+              <div className="flex items-center">
+                <svg
+                  viewBox="0 0 286 46"
+                  className="h-7 sm:h-8 w-auto overflow-visible"
+                  aria-label="FARNOVA"
+                  role="img"
+                >
+                  <defs>
+                    {/* Embroidered thread satin texture gradient */}
+                    <linearGradient id="threadGloss" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#141414" />
+                      <stop offset="25%" stopColor="#333333" />
+                      <stop offset="50%" stopColor="#4D4D4D" />
+                      <stop offset="75%" stopColor="#242424" />
+                      <stop offset="100%" stopColor="#0D0D0D" />
+                    </linearGradient>
+                    {/* Subtle thread relief & specular stitch edge */}
+                    <filter id="embroideredStitch" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="1" stdDeviation="0.6" floodColor="#FFFFFF" floodOpacity="0.45" />
+                      <feDropShadow dx="0" dy="-1" stdDeviation="0.6" floodColor="#000000" floodOpacity="0.85" />
+                    </filter>
+                  </defs>
+
+                  {/* Base embroidered letterforms matching exact reference geometry */}
+                  <g
+                    stroke="url(#threadGloss)"
+                    strokeWidth="6.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    filter="url(#embroideredStitch)"
+                    fill="none"
+                  >
+                    {/* F */}
+                    <path d="M 6 41 L 6 7 M 6 8.5 L 31 8.5 M 6 22 L 26 22" />
+                    {/* A (chevron inverted V - strictly no crossbar) */}
+                    <path d="M 43 41 L 58 7 L 73 41" />
+                    {/* R */}
+                    <path d="M 85 41 L 85 7 M 85 8.5 L 100 8.5 C 109 8.5 109 22 100 22 L 85 22 M 97 22 L 110 41" />
+                    {/* N */}
+                    <path d="M 122 41 L 122 7 M 122 8 L 147 40 M 147 7 L 147 41" />
+                    {/* O */}
+                    <ellipse cx="173" cy="24" rx="14.5" ry="17" />
+                    {/* V */}
+                    <path d="M 199 7 L 214 41 L 229 7" />
+                    {/* A (chevron inverted V - strictly no crossbar) */}
+                    <path d="M 240 41 L 255 7 L 270 41" />
+                  </g>
+
+                  {/* Embroidered thread spine highlight (stitch grain texture) */}
+                  <g
+                    stroke="#888888"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray="2 1.5"
+                    opacity="0.6"
+                    fill="none"
+                  >
+                    {/* F */}
+                    <path d="M 6 40 L 6 8 M 6 8.5 L 30 8.5 M 6 22 L 25 22" />
+                    {/* A */}
+                    <path d="M 44 40 L 58 8 L 72 40" />
+                    {/* R */}
+                    <path d="M 85 40 L 85 8 M 85 8.5 L 100 8.5 C 107.5 8.5 107.5 22 100 22 L 85 22 M 97 23 L 109 40" />
+                    {/* N */}
+                    <path d="M 122 40 L 122 8 M 123 9 L 146 39 M 147 8 L 147 40" />
+                    {/* O */}
+                    <ellipse cx="173" cy="24" rx="14.5" ry="17" />
+                    {/* V */}
+                    <path d="M 200 8 L 214 40 L 228 8" />
+                    {/* A */}
+                    <path d="M 241 40 L 255 8 L 269 40" />
+                  </g>
+                </svg>
+              </div>
+
+              {/* Sub text */}
+              <p className="text-[11px] sm:text-xs tracking-[0.28em] text-[#A3A3A3] uppercase font-sans mt-1.5 font-medium">
+                The Men&apos;s Fashion Store
+              </p>
+            </div>
+
             <div className="flex items-center gap-2 mb-4 text-[#D6C7B2] text-xs uppercase tracking-[0.25em] font-medium">
               <span>Farnova Collection</span>
               <span aria-hidden="true" className="opacity-50">·</span>
